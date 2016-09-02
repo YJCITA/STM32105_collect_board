@@ -1,0 +1,14 @@
+.\Obj\usart.o: ..\USER\usart.c
+.\Obj\usart.o: ..\LIB\CMSIS\CM3\DeviceSupport\ST\STM32F10x\stm32f10x.h
+.\Obj\usart.o: ..\LIB\CMSIS\CM3\CoreSupport\core_cm3.h
+.\Obj\usart.o: D:\Keil\ARM\RV31\INC\stdint.h
+.\Obj\usart.o: ..\LIB\CMSIS\CM3\DeviceSupport\ST\STM32F10x\system_stm32f10x.h
+.\Obj\usart.o: ..\USER\stm32f10x_conf.h
+.\Obj\usart.o: ..\LIB\STM32F10x_StdPeriph_Driver\inc\stm32f10x_gpio.h
+.\Obj\usart.o: ..\LIB\CMSIS\CM3\DeviceSupport\ST\STM32F10x\stm32f10x.h
+.\Obj\usart.o: ..\LIB\STM32F10x_StdPeriph_Driver\inc\stm32f10x_rcc.h
+.\Obj\usart.o: ..\LIB\STM32F10x_StdPeriph_Driver\inc\stm32f10x_usart.h
+.\Obj\usart.o: ..\USER\usart.h
+.\Obj\usart.o: ..\LIB\STM32F10x_StdPeriph_Driver\inc\misc.h
+.\Obj\usart.o: D:\Keil\ARM\RV31\INC\stdio.h
+.\Obj\usart.o: D:\Keil\ARM\RV31\INC\string.h

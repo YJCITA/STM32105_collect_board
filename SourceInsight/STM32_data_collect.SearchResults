@@ -1,0 +1,8 @@
+---- ADC_ConvertedValue Matches (4 in 1 files) ----
+Main.c (user):vu16 ADC_ConvertedValue[2];
+Main.c (user):    	AD_value_group[0] = ADC_ConvertedValue[0]; // DMA 缓存区中的数据
+Main.c (user):    	AD_value_group[1] = ADC_ConvertedValue[1]; 									  
+Main.c (user):    DMA_InitStructure.DMA_MemoryBaseAddr = (u32)&AD_Value; //ADC_ConvertedValue;//定义DMA通道存储器地址
+---- ADC_ConvertedValue Search Errors Encountered (1) ----
+The following 1 files could not be processed:
+F:\Develop\ADAS\Code\CAN\doing\STM32105_collect_board\MDK\JLinkLog.txt : File could not be opened.
