@@ -670,45 +670,45 @@ void CAN_CancelTransmit(CAN_TypeDef* CANx, uint8_t Mailbox)
   */
 void CAN_Receive(CAN_TypeDef* CANx, uint8_t FIFONumber, CanRxMsg* RxMessage)
 {
-  /* Check the parameters */
-  assert_param(IS_CAN_ALL_PERIPH(CANx));
-  assert_param(IS_CAN_FIFO(FIFONumber));
-  /* Get the Id */
-  RxMessage->IDE = (uint8_t)0x04 & CANx->sFIFOMailBox[FIFONumber].RIR;
-  if (RxMessage->IDE == CAN_Id_Standard)
-  {
-    RxMessage->StdId = (uint32_t)0x000007FF & (CANx->sFIFOMailBox[FIFONumber].RIR >> 21);
-  }
-  else
-  {
-    RxMessage->ExtId = (uint32_t)0x1FFFFFFF & (CANx->sFIFOMailBox[FIFONumber].RIR >> 3);
-  }
-  
-  RxMessage->RTR = (uint8_t)0x02 & CANx->sFIFOMailBox[FIFONumber].RIR;
-  /* Get the DLC */
-  RxMessage->DLC = (uint8_t)0x0F & CANx->sFIFOMailBox[FIFONumber].RDTR;
-  /* Get the FMI */
-  RxMessage->FMI = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDTR >> 8);
-  /* Get the data field */
-  RxMessage->Data[0] = (uint8_t)0xFF & CANx->sFIFOMailBox[FIFONumber].RDLR;
-  RxMessage->Data[1] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDLR >> 8);
-  RxMessage->Data[2] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDLR >> 16);
-  RxMessage->Data[3] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDLR >> 24);
-  RxMessage->Data[4] = (uint8_t)0xFF & CANx->sFIFOMailBox[FIFONumber].RDHR;
-  RxMessage->Data[5] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDHR >> 8);
-  RxMessage->Data[6] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDHR >> 16);
-  RxMessage->Data[7] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDHR >> 24);
-  /* Release the FIFO */
-  /* Release FIFO0 */
-  if (FIFONumber == CAN_FIFO0)
-  {
-    CANx->RF0R |= CAN_RF0R_RFOM0;
-  }
-  /* Release FIFO1 */
-  else /* FIFONumber == CAN_FIFO1 */
-  {
-    CANx->RF1R |= CAN_RF1R_RFOM1;
-  }
+    /* Check the parameters */
+    assert_param(IS_CAN_ALL_PERIPH(CANx));
+    assert_param(IS_CAN_FIFO(FIFONumber));
+    /* Get the Id */
+    RxMessage->IDE = (uint8_t)0x04 & CANx->sFIFOMailBox[FIFONumber].RIR;
+    if (RxMessage->IDE == CAN_Id_Standard)
+    {
+        RxMessage->StdId = (uint32_t)0x000007FF & (CANx->sFIFOMailBox[FIFONumber].RIR >> 21);
+    }
+    else
+    {
+        RxMessage->ExtId = (uint32_t)0x1FFFFFFF & (CANx->sFIFOMailBox[FIFONumber].RIR >> 3);
+    }
+
+    RxMessage->RTR = (uint8_t)0x02 & CANx->sFIFOMailBox[FIFONumber].RIR;
+    /* Get the DLC */
+    RxMessage->DLC = (uint8_t)0x0F & CANx->sFIFOMailBox[FIFONumber].RDTR;
+    /* Get the FMI */
+    RxMessage->FMI = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDTR >> 8);
+    /* Get the data field */
+    RxMessage->Data[0] = (uint8_t)0xFF & CANx->sFIFOMailBox[FIFONumber].RDLR;
+    RxMessage->Data[1] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDLR >> 8);
+    RxMessage->Data[2] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDLR >> 16);
+    RxMessage->Data[3] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDLR >> 24);
+    RxMessage->Data[4] = (uint8_t)0xFF & CANx->sFIFOMailBox[FIFONumber].RDHR;
+    RxMessage->Data[5] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDHR >> 8);
+    RxMessage->Data[6] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDHR >> 16);
+    RxMessage->Data[7] = (uint8_t)0xFF & (CANx->sFIFOMailBox[FIFONumber].RDHR >> 24);
+    /* Release the FIFO */
+    /* Release FIFO0 */
+    if (FIFONumber == CAN_FIFO0)
+    {
+        CANx->RF0R |= CAN_RF0R_RFOM0;
+    }
+    /* Release FIFO1 */
+    else /* FIFONumber == CAN_FIFO1 */
+    {
+        CANx->RF1R |= CAN_RF1R_RFOM1;
+    }
 }
 
 /**

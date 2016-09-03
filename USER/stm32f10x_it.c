@@ -35,6 +35,7 @@
 
 extern u8 RxBuffer2[1000];	 
 extern u16 RxCounter2 ;	// 接收计数
+extern u16 RxCounter2_frame;	// 接收完一整帧之后的直接数量
 extern u8 ReceiveState2;
 
 extern u8 RxBuffer3[1000];	 
@@ -91,7 +92,7 @@ void USART2_IRQHandler(void)
     u8 Clear = Clear;		// 用来消除编译器的"没有用到"提醒
     if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
     {
-		RxBuffer2[RxCounter2++] = USART_ReceiveData(USART2);	//接收数据												   				 
+		RxBuffer2[RxCounter2++] = USART_ReceiveData(USART2);	//接收数据 逐个字节接收											   				 
 
     }
 	else if(USART_GetITStatus(USART2, USART_IT_IDLE) != RESET)	// 如果接收到1帧数据
@@ -99,6 +100,9 @@ void USART2_IRQHandler(void)
 		Clear = USART2->SR;		// 读SR寄存器
 		Clear = USART2->DR;		// 读DR寄存器(先读SR再读DR，就是为了清除IDLE中断)
 		ReceiveState2 = 1;			// 标记接收到了1帧数据
+
+        RxCounter2_frame = RxCounter2;
+        RxCounter2 = 0;            
 	}
 	
 
@@ -161,7 +165,7 @@ void CAN1_RX0_IRQHandler(void)
 
     CAN_Receive(CAN1,CAN_FIFO0, &RxMessage);	 // CAN接收数据		
 
-//	Comm_Receive_CANmsg_str(USART3, 1,&RxMessage);
+//	Comm_Receive_CANmsg_str(USART3, 1, &RxMessage);
 }
 
 /***********************

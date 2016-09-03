@@ -406,11 +406,6 @@
               <FileType>1</FileType>
               <FilePath>..\USER\usart.c</FilePath>
             </File>
-            <File>
-              <FileName>I2C_MPU6050.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\USER\I2C_MPU6050.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

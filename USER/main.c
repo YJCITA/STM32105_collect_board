@@ -17,10 +17,11 @@
 #include "stm32f10x_gpio.h"
 #include "misc.h"
 
-// IMU
-#include "I2C_MPU6050.h"
+#define CAN_GPS 0
+#define CAN_ATT 1
+#define CAN_ADC 1
 
-
+void init(void);
 void RCC_Configuration(void);
 void ADC_Configuration(void);
 void RCC_Configuration1(void);
@@ -30,13 +31,16 @@ void DMA_Configuration(void);
 void LED_Config(void);
 void Delay(__IO uint32_t nCount);
 
-void USART2CAN(void);
+void GPS_USART2CAN(void);
+void USART2CAN(u32 CAN_send_ID_t );
+
 void LED_life(void);
 void AD_filter(void);
 
 
 /* Private variables ---------------------------------------------------------*/
-#define SAMPLES_N 5 //每通道采5次
+// ADC
+#define SAMPLES_N 20 //每通道采20次
 #define CHANEELS_M 2 //为12个通道
 #define ADC1_DR_Address    ((u32)0x4001244C)
 
@@ -51,6 +55,7 @@ vu16 AD_value_out[CHANEELS_M];
 // usart		
 volatile u8 RxBuffer2[1000] = {0x00};	 	
 volatile u16 RxCounter2 = 0;	// 接收计数
+volatile u16 RxCounter2_frame = 0;	// 接收完一整帧之后的直接数量
 volatile u8 ReceiveState2 = 0;		
 volatile u8 RxBuffer3[1000] = {0x00};	 	
 volatile u16 RxCounter3 = 0;	// 接收计数
@@ -63,65 +68,82 @@ u8 str_data[10] = {0x00};
 // usart2can
 CanTxMsg TxMsg;
 u8 last_left_data_nums = 0; // 按8B发送完后，剩余的字节数据
-u16 GPS_msg_length = 0; // CAN上待发送的数据长度
-int16_t GPS_hex_data[30] = {0x00};
 u32 CAN_send_ID = 190;  //从190开始作为第一包
+int16_t adc_data[2] = {0x00};
 
 
 int main(void)
 {	
-//	/* System Clocks Configuration **********************************************/
-//	RCC_Configuration();     
-//	LED_Config();// LED		
-//	
-//	USART2_Configuration();// 串口配置	
-//	Delay(500);	
-//	USART3_Configuration();	  
-//												   
-//	// CAN1 配置
-//	CAN1_Config(SET_CAN_SJW,SET_CAN_BS1,SET_CAN_BS2,SET_CAN_PRES);
-//	Delay(500); 	
-//	CAN2_Config(SET_CAN_SJW,SET_CAN_BS1,SET_CAN_BS2,SET_CAN_PRES);	// CAN2 配置
-//						  
-//	while (1)
-//	{    
-//		LED_life();
-//		USART2CAN();			
-//    }
+    u16 adc_update_counter = 0;
+    
+    init( );    
+    while (1)
+    {
+        if(CAN_GPS)
+        {
+            GPS_USART2CAN();	
+        }else if(CAN_ATT)
+        {  // att
+            CAN_send_ID = 0xBC;
+            USART2CAN(CAN_send_ID);
+        }
 
-     /* System clocks configuration ---------------------------------------------*/
-//    RCC_Configuration1();
-//    GPIO_Configuration();
-//    DMA_Configuration();
-//    ADC_Configuration();
-//    while (1)
-//    {
-//        AD_filter();
-//    	AD_value_out[0] = AD_value_filter[0]; // DMA 缓存区中的数据
-//    	AD_value_out[1] = AD_value_filter[1]; 
-//        Delay(10);
-//    }
+        if(CAN_ADC)
+        {
+            if(adc_update_counter++>50)
+            {
+                adc_update_counter = 0;
+                // ADC
+                AD_filter();
+            	adc_data[0] = AD_value_filter[0]; // DMA 缓存区中的数据
+            	adc_data[1] = AD_value_filter[1]; 
 
-//    /*IIC接口初始化*/
-//	I2C_MPU6050_Init(); 	 
-//	/*陀螺仪传感器初始化*/
-//    InitMPU6050();
-//    GetData
-//	while(1)
-//	{
-//	    GetData(ACCEL_XOUT_H)
-//	//	printf("\r\n---------加速度X轴原始数据---------%d \r\n",GetData(ACCEL_XOUT_H));
-//	//	printf("\r\n---------加速度Y轴原始数据---------%d \r\n",GetData(ACCEL_YOUT_H));	
-//	//	printf("\r\n---------加速度Z轴原始数据---------%d \r\n",GetData(ACCEL_ZOUT_H));	
-//	//	printf("\r\n---------陀螺仪X轴原始数据---------%d \r\n",GetData(GYRO_XOUT_H));	
-//	//	printf("\r\n---------陀螺仪Y轴原始数据---------%d \r\n",GetData(GYRO_YOUT_H));	
-//	//	printf("\r\n---------陀螺仪Z轴原始数据---------%d \r\n",GetData(GYRO_ZOUT_H));
-//	//	delay_ms(500);
+                if(adc_data[0] > 10 || adc_data[1] > 10)
+                {
+                      // CAN 转发 ADC 			
+            		TxMsg.StdId=0x00; 
+            		TxMsg.ExtId=0x00;  
+            		TxMsg.IDE=CAN_ID_STD;  //使用标准id
+            		TxMsg.RTR=CAN_RTR_DATA;
+            		CAN_send_ID = 0xBB;
+            		TxMsg.DLC = 4; // data length
+            		memcpy(&TxMsg.Data[0], 0, 8); // 先清零
+            		memcpy(&TxMsg.Data[0], &adc_data[0], 4);
+            		TxMsg.StdId = CAN_send_ID; 
+            		CAN_SendData(CAN1,	&TxMsg);
+                }
 
-//	}	
+//                Comm_Send_CANmsg_str(USART3, 1, &TxMsg);
+            }
+        }
+
+        LED_life();
+    }
+
 	
 }
 
+void init(void)
+{
+    //	/* System Clocks Configuration **********************************************/
+	RCC_Configuration();     
+	LED_Config();// LED		
+	
+	USART2_Configuration();// 串口配置	
+	Delay(500);	
+	USART3_Configuration();	  												   
+	
+	CAN1_Config(SET_CAN_SJW,SET_CAN_BS1,SET_CAN_BS2,SET_CAN_PRES);// CAN1 配置
+	Delay(500); 	
+	CAN2_Config(SET_CAN_SJW,SET_CAN_BS1,SET_CAN_BS2,SET_CAN_PRES);	// CAN2 配置
+
+     /* System clocks configuration ---------------------------------------------*/
+    RCC_Configuration1();
+    GPIO_Configuration();
+    DMA_Configuration();
+    ADC_Configuration();
+}
+    
 
 void AD_filter(void)
 {
@@ -142,24 +164,26 @@ void LED_life(void)
 {    
     // 系统生命灯 LED 闪烁
     led_life++;
-    if(led_life<300000)
+    if(led_life<200000)
     {
         GPIO_SetBits(GPIOC,GPIO_Pin_0); 
     }else
     {
         GPIO_ResetBits(GPIOC,GPIO_Pin_0);
-        if(led_life > 600000)
+        if(led_life > 400000)
         {   
             led_life = 0; 
         }
     }
 }
 
-
-void USART2CAN(void)
+// 从串口2收FMU数据，通过CAN1发送
+// 数据: euler(3*2B) + vel(3*2B) + timestamp(4B) + pos(3*2B) = 22B
+void GPS_USART2CAN(void)
 {
-    u8 i;
-    u8 j;
+    u8 i, j;
+    u16 GPS_msg_length = 0; // CAN上待发送的数据长度
+    int16_t GPS_hex_data[30] = {0x00};
 	if(ReceiveState2 == 1)//如果接收到1帧数据
 		{			
 			if(RxBuffer2[0] == 'A' && RxBuffer2[1] == 'r' && RxBuffer2[2] == 'd' )// 数据从0-11为帧头
@@ -183,7 +207,7 @@ void USART2CAN(void)
 				
 				GPS_msg_length = 0; // 待发送的GPS数据长度
 				CAN_send_ID = 0xB8;
-				for(i=0; i<(RxCounter2-12)/5; i++)
+				for(i=0; i<(RxCounter2_frame-12)/5; i++)
 				{
 					// FMU发过来的一个数据是5个字符长度
 					j = i*5;
@@ -211,7 +235,7 @@ void USART2CAN(void)
 				if(last_left_data_nums>0)
 				{
 					TxMsg.DLC = last_left_data_nums*2; // data length
-					//memcpy(&TxMsg.Data[0], 0, 8); // 先清零
+					memcpy(&TxMsg.Data[0], 0, 8); // 先清零
 					memcpy(&TxMsg.Data[0], &GPS_hex_data[GPS_msg_length-last_left_data_nums], last_left_data_nums*2);
 					TxMsg.StdId=CAN_send_ID++; 
 					CAN_SendData(CAN1,	&TxMsg);	
@@ -220,7 +244,7 @@ void USART2CAN(void)
 							
 			}
 			ReceiveState2 = 0;
-			RxCounter2 = 0;
+			RxCounter2_frame = 0;
 		}
 
 		if(ReceiveState3 == 1)//如果接收到1帧数据
@@ -231,19 +255,81 @@ void USART2CAN(void)
 		}
 }
 
-char ConvertChar2Hex(char ch) 
+
+// 从串口2收att数据，通过CAN1发送
+// 数据: euler(3*2B) 
+void USART2CAN(u32 CAN_send_ID_t )
 {
-	if((ch>='0')&&(ch<='9'))
-		return ch-'0';
-	else if((ch>='A')&&(ch<='F'))
-		return ch-'A'+10;
-	else if((ch>='a')&&(ch<='f'))
-		return ch-'a'+10;
-	else 
-		return (-1);
+    u8 i, j;
+    u8 uart_msg_length = 0;// 待发送的GPS数据长度
+    int16_t uart_hex_data[30] = {0x00};
+	u32 CAN_send_ID = CAN_send_ID_t;
+	if(ReceiveState2 == 1)//如果接收到1帧数据
+		{			
+			if(RxBuffer2[0] == 'A' && RxBuffer2[1] == 'r' && RxBuffer2[2] == 'd' )// 数据从0-11为帧头
+			{
+				// 串口2收到一帧数据，LED 闪烁
+				if(led_counter==0)
+				{
+					GPIO_SetBits(GPIOC,GPIO_Pin_15); 
+					led_counter = 1;
+				}else
+				{
+					GPIO_ResetBits(GPIOC,GPIO_Pin_15);
+					led_counter = 0;
+				}
+
+				// CAN 转发 			
+				TxMsg.StdId=0x00; 
+				TxMsg.ExtId=0x00;  
+				TxMsg.IDE=CAN_ID_STD;  //使用标准id
+				TxMsg.RTR=CAN_RTR_DATA; 
+
+				for(i=0; i<(RxCounter2_frame-12)/5; i++)
+				{
+					// FMU发过来的一个数据是5个字符长度
+					j = i*5;
+					str_data[0] = RxBuffer2[12+j];
+					str_data[1] = RxBuffer2[12+j+1];
+					str_data[2] = RxBuffer2[12+j+2];
+					str_data[3] = RxBuffer2[12+j+3];
+					str_data[4] = RxBuffer2[12+j+4];
+					str_data[5] = '\0';
+					sscanf(str_data, "%hd", &uart_hex_data[i]);
+					uart_msg_length+=1;
+				}
+
+				last_left_data_nums = uart_msg_length; // 待发送的数据长度  2B为单位
+				for(i=0; i<uart_msg_length/4; i++) // 一个数据长度为2Byte,一个CAN包为8B
+				{ 
+					TxMsg.DLC = 8; // data length
+					memcpy(&TxMsg.Data[0], &uart_hex_data[i*4], 8);
+					TxMsg.StdId = CAN_send_ID++; 
+					CAN_SendData(CAN1,	&TxMsg);
+					last_left_data_nums = last_left_data_nums - 4; // 一次发送8B
+					Delay(1800);			
+					//Comm_Send_CANmsg_str(USART3, 1, &TxMsg);
+				}				
+				if(last_left_data_nums>0)
+				{
+					TxMsg.DLC = last_left_data_nums*2; // data length
+					memcpy(&TxMsg.Data[0], 0, 8); // 先清零
+					memcpy(&TxMsg.Data[0], &uart_hex_data[uart_msg_length-last_left_data_nums], last_left_data_nums*2);
+					TxMsg.StdId=CAN_send_ID++; 
+					CAN_SendData(CAN1,	&TxMsg);	
+					//Comm_Send_CANmsg_str(USART3, 1, &TxMsg);
+				}							
+			}
+			ReceiveState2 = 0;
+			RxCounter2_frame = 0;
+		}
+
+		if(ReceiveState3 == 1)//如果接收到1帧数据
+		{
+			ReceiveState3 = 0;
+			RxCounter3 = 0;
+		}
 }
-
-
 
 
 /*******************************************************************************
