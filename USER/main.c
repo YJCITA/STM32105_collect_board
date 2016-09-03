@@ -74,8 +74,7 @@ int16_t adc_data[2] = {0x00};
 
 int main(void)
 {	
-    u16 adc_update_counter = 0;
-    
+    u16 adc_update_counter = 0;    
     init( );    
     while (1)
     {
@@ -84,7 +83,7 @@ int main(void)
             GPS_USART2CAN();	
         }else if(CAN_ATT)
         {  // att
-            CAN_send_ID = 0xBC;
+            CAN_send_ID = 0xBB;
             USART2CAN(CAN_send_ID);
         }
 
@@ -105,7 +104,7 @@ int main(void)
             		TxMsg.ExtId=0x00;  
             		TxMsg.IDE=CAN_ID_STD;  //使用标准id
             		TxMsg.RTR=CAN_RTR_DATA;
-            		CAN_send_ID = 0xBB;
+            		CAN_send_ID = 0xBC;
             		TxMsg.DLC = 4; // data length
             		memcpy(&TxMsg.Data[0], 0, 8); // 先清零
             		memcpy(&TxMsg.Data[0], &adc_data[0], 4);
