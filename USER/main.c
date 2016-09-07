@@ -49,8 +49,8 @@ vu16 AD_value_filter[CHANEELS_M]; //用来存放求平均值之后的结果
 vu16 AD_value_out[CHANEELS_M]; 
 
 
-//CanTxMsg TxMsg1={0xAB,0,CAN_ID_STD,CAN_RTR_DATA,8,{0xAB,0,0,0,0,0,0,0}};
-//CanTxMsg TxMsg2={0xCD,1,CAN_ID_STD,CAN_RTR_DATA,8,{0xCD,0,0,0,0,0,0,0}};
+CanTxMsg TxMsg1={0xAB,0,CAN_ID_STD,CAN_RTR_DATA,8,{0xAB,0,0,0,0,0,0,0}};
+CanTxMsg TxMsg2={0xCD,1,CAN_ID_STD,CAN_RTR_DATA,8,{0xCD,0,0,0,0,0,0,0}};
 
 // usart		
 volatile u8 RxBuffer2[1000] = {0x00};	 	
@@ -68,7 +68,7 @@ u8 str_data[10] = {0x00};
 // usart2can
 CanTxMsg TxMsg;
 u8 last_left_data_nums = 0; // 按8B发送完后，剩余的字节数据
-u32 CAN_send_ID = 190;  //从190开始作为第一包
+u32 CAN_send_ID = 0xB8;  //从190开始作为第一包
 int16_t adc_data[2] = {0x00};
 
 
@@ -83,7 +83,7 @@ int main(void)
             GPS_USART2CAN();	
         }else if(CAN_ATT)
         {  // att
-            CAN_send_ID = 0xBB;
+            CAN_send_ID = 0xB8;
             USART2CAN(CAN_send_ID);
         }
 
@@ -104,15 +104,13 @@ int main(void)
             		TxMsg.ExtId=0x00;  
             		TxMsg.IDE=CAN_ID_STD;  //使用标准id
             		TxMsg.RTR=CAN_RTR_DATA;
-            		CAN_send_ID = 0xBC;
+            		CAN_send_ID = 0xB9;
             		TxMsg.DLC = 4; // data length
             		memcpy(&TxMsg.Data[0], 0, 8); // 先清零
             		memcpy(&TxMsg.Data[0], &adc_data[0], 4);
             		TxMsg.StdId = CAN_send_ID; 
             		CAN_SendData(CAN1,	&TxMsg);
                 }
-
-//                Comm_Send_CANmsg_str(USART3, 1, &TxMsg);
             }
         }
 
@@ -173,6 +171,9 @@ void LED_life(void)
         {   
             led_life = 0; 
         }
+
+//        Comm_Send_CANmsg_str(USART3, 1, &TxMsg1);
+//        USART_SendData(USART2, '3');
     }
 }
 
