@@ -19,7 +19,7 @@
 
 #define CAN_GPS 0
 #define CAN_ATT 1
-#define CAN_ADC 1
+#define CAN_ADC 0
 
 void init(void);
 void RCC_Configuration(void);
@@ -35,7 +35,9 @@ void GPS_USART2CAN(void);
 void USART2CAN(u32 CAN_send_ID_t );
 
 void LED_life(void);
-void AD_filter(void);
+void ADC_filter(void);
+void ADC_send(void);
+
 
 
 /* Private variables ---------------------------------------------------------*/
@@ -44,9 +46,9 @@ void AD_filter(void);
 #define CHANEELS_M 2 //为12个通道
 #define ADC1_DR_Address    ((u32)0x4001244C)
 
-vu16 AD_value[SAMPLES_N][CHANEELS_M]; //用来存放ADC转换结果，也是DMA的目标地址
-vu16 AD_value_filter[CHANEELS_M]; //用来存放求平均值之后的结果
-vu16 AD_value_out[CHANEELS_M]; 
+vu16 ADC_value[SAMPLES_N][CHANEELS_M]; //用来存放ADC转换结果，也是DMA的目标地址
+vu16 ADC_value_filter[CHANEELS_M]; //用来存放求平均值之后的结果
+vu16 ADC_value_out[CHANEELS_M]; 
 
 
 CanTxMsg TxMsg1={0xAB,0,CAN_ID_STD,CAN_RTR_DATA,8,{0xAB,0,0,0,0,0,0,0}};
@@ -70,12 +72,12 @@ CanTxMsg TxMsg;
 u8 last_left_data_nums = 0; // 按8B发送完后，剩余的字节数据
 u32 CAN_send_ID = 0xB8;  //从190开始作为第一包
 int16_t adc_data[2] = {0x00};
+u16 adc_update_counter = 0;    
 
 
 int main(void)
-{	
-    u16 adc_update_counter = 0;    
-    init( );    
+{    
+    init();    
     while (1)
     {
         if(CAN_GPS)
@@ -89,29 +91,7 @@ int main(void)
 
         if(CAN_ADC)
         {
-            if(adc_update_counter++>50)
-            {
-                adc_update_counter = 0;
-                // ADC
-                AD_filter();
-            	adc_data[0] = AD_value_filter[0]; // DMA 缓存区中的数据
-            	adc_data[1] = AD_value_filter[1]; 
-
-                if(adc_data[0] > 10 || adc_data[1] > 10)
-                {
-                      // CAN 转发 ADC 			
-            		TxMsg.StdId=0x00; 
-            		TxMsg.ExtId=0x00;  
-            		TxMsg.IDE=CAN_ID_STD;  //使用标准id
-            		TxMsg.RTR=CAN_RTR_DATA;
-            		CAN_send_ID = 0xB9;
-            		TxMsg.DLC = 4; // data length
-            		memcpy(&TxMsg.Data[0], 0, 8); // 先清零
-            		memcpy(&TxMsg.Data[0], &adc_data[0], 4);
-            		TxMsg.StdId = CAN_send_ID; 
-            		CAN_SendData(CAN1,	&TxMsg);
-                }
-            }
+            ADC_send();
         }
 
         LED_life();
@@ -120,6 +100,36 @@ int main(void)
 	
 }
 
+// 采集ADC数据和发送
+void ADC_send(void)
+{
+    if(adc_update_counter++>10)
+    {
+        adc_update_counter = 0;
+        // ADC
+        ADC_filter();
+    	adc_data[0] = ADC_value_filter[0]; // DMA 缓存区中的数据
+    	adc_data[1] = ADC_value_filter[1]; 
+
+        if(adc_data[0] > 30 || adc_data[1] > 150)
+        {
+            // CAN 转发 ADC 			
+    		TxMsg.StdId=0x00; 
+    		TxMsg.ExtId=0x00;  
+    		TxMsg.IDE=CAN_ID_STD;  //使用标准id
+    		TxMsg.RTR=CAN_RTR_DATA;
+            
+    		CAN_send_ID = 0xB9;
+    		TxMsg.DLC = 4; // data length
+    		memcpy(&TxMsg.Data[0], 0, 8); // 先清零
+    		memcpy(&TxMsg.Data[0], &adc_data[0], 4);
+    		TxMsg.StdId = CAN_send_ID; 
+            CAN_SendData(CAN1,	&TxMsg);
+        }
+    }
+            
+
+}
 void init(void)
 {
     //	/* System Clocks Configuration **********************************************/
@@ -142,7 +152,7 @@ void init(void)
 }
     
 
-void AD_filter(void)
+void ADC_filter(void)
 {
     int sum = 0;
     u8 i, count;
@@ -150,9 +160,9 @@ void AD_filter(void)
     {
         for(count=0; count<SAMPLES_N; count++)
         {
-            sum += AD_value[count][i];
+            sum += ADC_value[count][i];
         }
-        AD_value_filter[i] = sum/SAMPLES_N;
+        ADC_value_filter[i] = sum/SAMPLES_N;
         sum=0;
     }
 }
@@ -347,7 +357,7 @@ void DMA_Configuration(void)
     /* DMA channel1 configuration ----------------------------------------------*/
     DMA_DeInit(DMA1_Channel1); //复位DMA通道1
     DMA_InitStructure.DMA_PeripheralBaseAddr = ADC1_DR_Address;//定义 DMA通道外设基地址=ADC1_DR_Address
-    DMA_InitStructure.DMA_MemoryBaseAddr = (u32)&AD_value; //ADC_ConvertedValue;//定义DMA通道存储器地址
+    DMA_InitStructure.DMA_MemoryBaseAddr = (u32)&ADC_value; //ADC_ConvertedValue;//定义DMA通道存储器地址
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;//指定外设为源地址
     DMA_InitStructure.DMA_BufferSize = SAMPLES_N*CHANEELS_M;//定义DMA缓冲区大小N*M
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;//当前外设寄存器地址不变
