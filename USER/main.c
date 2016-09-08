@@ -19,7 +19,7 @@
 
 #define CAN_GPS 0
 #define CAN_ATT 1
-#define CAN_ADC 1
+#define CAN_ADC 0
 
 void init(void);
 void RCC_Configuration(void);
@@ -109,7 +109,7 @@ int main(void)
             		memcpy(&TxMsg.Data[0], 0, 8); // œ»«Â¡„
             		memcpy(&TxMsg.Data[0], &adc_data[0], 4);
             		TxMsg.StdId = CAN_send_ID; 
-            		CAN_SendData(CAN1,	&TxMsg);
+//            		CAN_SendData(CAN1,	&TxMsg);
                 }
             }
         }
