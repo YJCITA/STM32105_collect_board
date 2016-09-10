@@ -3,7 +3,7 @@
 
 
 void USART1_Configuration(void);
-void USART2_Configuration(void);
+void USART2_Configuration(u32 baud_rate);
 void USART3_Configuration(void);
 
 void USART_Send(USART_TypeDef* USARTx, uint8_t *Dat,uint16_t len);
