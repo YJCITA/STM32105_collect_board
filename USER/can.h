@@ -11,9 +11,6 @@
 #define    SET_CAN_BS2   CAN_BS2_4tq	// 7
 #define    SET_CAN_PRES  8				// ²¨ÌØÂÊ·ÖÆµÆ÷ 9-250K 18-125K 
 
-
-
-
 void CAN1_Config(uint8_t sjw,uint8_t bs1,uint8_t bs2,uint16_t pres);
 void CAN2_Config(uint8_t sjw,uint8_t bs1,uint8_t bs2,uint16_t pres);
 void CAN_SendData(CAN_TypeDef* CANx,CanTxMsg* CanData);

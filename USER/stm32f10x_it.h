@@ -42,7 +42,7 @@ void UsageFaultException(void);
 void DebugMonitor(void);
 void SVCHandler(void);
 void PendSVC(void);
-void SysTickHandler(void);
+//void SysTickHandler(void);
 void WWDG_IRQHandler(void);
 void PVD_IRQHandler(void);
 void TAMPER_IRQHandler(void);

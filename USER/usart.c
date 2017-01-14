@@ -40,16 +40,14 @@ void USART2_Configuration(u32 baud_rate)
 	USART_Init(USART2, &USART_InitStructure);
 	/* 使能USART2收发中断 */
 	USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
-	USART_ITConfig(USART2, USART_IT_TXE, ENABLE);		   
-
-	// -YJ- 打开空闲中断 
+	USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
+    // -YJ- 打开空闲中断 
 	USART_ITConfig(USART2, USART_IT_IDLE, ENABLE);  // 当完成收完一帧的时候会触发中断，但是这个本质是检测空闲，如果连续发??
 
 	/* 使能USART2 */
 	USART_Cmd(USART2, ENABLE);
 	/* 清除发送完成标志 */
 	USART_ClearFlag(USART2, USART_FLAG_TC);
-
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);		   
   
     /* Enable the USART2 Interrupt */
